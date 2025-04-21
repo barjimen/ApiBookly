@@ -1,0 +1,6 @@
+@ApiBookly_HostAddress = http://localhost:5243
+
+GET {{ApiBookly_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
