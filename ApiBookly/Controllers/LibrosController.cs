@@ -15,10 +15,17 @@ namespace ApiBookly.Controllers
         {
             this.repo = repo;
         }
+
         [HttpGet("[action]")]
         public async Task<ActionResult<Biblioteca>> GetIndex()
         {
-            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+            int idUsuario = 0;
+
+            var claim = User.FindFirst("id");
+            if (claim != null)
+            {
+                int.TryParse(claim.Value, out idUsuario);
+            }
             var libros = await this.repo.GetLibrosAsync(idUsuario);
             var etiquetas = await this.repo.GetEtiquetas();
             var autores = await this.repo.GetAutoresAsync();
@@ -41,10 +48,16 @@ namespace ApiBookly.Controllers
         [HttpGet("{idLibro}")]
         public async Task<ActionResult<LibrosDetalles>> GetDetallesLibro(int idLibro)
         {
-            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+            int idUsuario = 0;
+
+            var claim = User.FindFirst("id");
+            if (claim != null)
+            {
+                int.TryParse(claim.Value, out idUsuario);
+            }
             Libros libro = await this.repo.FindLibros(idLibro);
             var etiquetas = await this.repo.ObtenerEtiquetasLibro(idLibro);
-            List<Resenas> Reseñas = await this.repo.Reseñas(idLibro);
+            List<ReseñaDTO> Reseñas = await this.repo.Reseñas(idLibro);
 
             int listaId = 0;
             if (idUsuario != 0)
@@ -65,7 +78,13 @@ namespace ApiBookly.Controllers
         [HttpGet("[action]")]
         public async Task<ActionResult<GenerosDTO>> GetGeneros()
         {
-            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+            int idUsuario = 0;
+
+            var claim = User.FindFirst("id");
+            if (claim != null)
+            {
+                int.TryParse(claim.Value, out idUsuario);
+            }
             var etiquetas = await this.repo.GetEtiquetas();
             List<LibrosDTO> libros = await this.repo.GetLibrosAsync(idUsuario);
             var generosConLibros = etiquetas.Select(e => new Generos

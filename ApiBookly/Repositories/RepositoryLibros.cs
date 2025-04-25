@@ -205,28 +205,31 @@ namespace ApiBookly.Repositories
             return consulta;
         }
 
-        public async Task<List<Resenas>> Reseñas(int idLibro)
+        public async Task<List<ReseñaDTO>> Reseñas(int idLibro)
         {
             var resenas = await this.context.Reseñas
-                    .Where(r => r.idLibro == idLibro)
-                    .OrderByDescending(r => r.fecha)
-                    .ToListAsync();
+        .Where(r => r.idLibro == idLibro)
+        .OrderByDescending(r => r.fecha)
+        .ToListAsync();
 
             var usuarioIds = resenas.Select(r => r.UsuarioId).Distinct().ToList();
 
             var usuarios = await this.context.Usuarios
-                            .Where(u => usuarioIds.Contains(u.Id))
-                            .ToDictionaryAsync(u => u.Id, u => u);
+                .Where(u => usuarioIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u);
 
-            foreach (var resena in resenas)
+            var resenasDto = resenas.Select(r => new ReseñaDTO
             {
-                if (usuarios.TryGetValue(resena.UsuarioId, out var usuario))
-                {
-                    resena.Usuario = usuario;
-                }
-            }
+                Id = r.Id,
+                UsuarioId = r.UsuarioId,
+                NombreUsuario = usuarios.TryGetValue(r.UsuarioId, out var u) ? u.Nombre : "Anónimo",
+                ImagenPerfil = usuarios.TryGetValue(r.UsuarioId, out var u2) ? u2.ImagenPerfil : null,
+                Calificacion = r.calificacion,
+                Texto = r.texto,
+                Fecha = r.fecha
+            }).ToList();
 
-            return resenas;
+            return resenasDto;
         }
 
         public async Task<DetallesAutor> FindAutorAsync(int idAutor)

@@ -1,13 +1,19 @@
 using System.Reflection;
 using ApiBookly.Context;
+using ApiBookly.Helper;
 using ApiBookly.Repositories;
+using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using SegundoExamenAzure.Helper;
+using SegundoExamenAzure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+//Para los blobs
+var azureKeys = builder.Configuration.GetValue<string>("AzureKeys:StorageAccount");
+BlobServiceClient blob = new BlobServiceClient(azureKeys);
+builder.Services.AddTransient<BlobServiceClient>(x => blob);
+
 builder.Services.AddOpenApi();
 string connectionString = builder.Configuration.GetConnectionString("Bookly");
 
@@ -18,8 +24,8 @@ builder.Services.AddSingleton<HelperActionServicesOAuth>(helper);
 builder.Services.AddAuthentication(helper.GetAuthenticateSchema())
                         .AddJwtBearer(helper.GetJwtBearerOptions());
 
-
 builder.Services.AddTransient<IRepositoryLibros,RepositoryLibros>();
+builder.Services.AddTransient<ServiceStorageBlobs>();
 builder.Services.AddDbContext<StoryContext>(options =>
 {
     options.UseSqlServer(connectionString);
@@ -41,10 +47,7 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "";
 });
 
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
