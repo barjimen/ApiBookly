@@ -2,6 +2,7 @@
 using BooklyNugget.Models;
 using Microsoft.AspNetCore.Mvc;
 using ApiBookly.Helper;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ApiBookly.Controllers
 {
@@ -84,47 +85,56 @@ namespace ApiBookly.Controllers
             return VistaGeneros;
         }
 
-        //[HttpGet]
-        //public async Task<JsonResult> BuscarLibros(string query)
-        //{
-        //    if (string.IsNullOrEmpty(query))
-        //    {
-        //        return Json(new { results = new List<object>() });
-        //    }
+        [HttpGet("[action]/{idGenero}")]
+        public async Task<ActionResult<List<Libros>>> GetDetalleGenero(int idGenero, [FromQuery] int? idUsuario = null)
+        {
+            List<Libros> libros = await this.repo.FiltrarPorEtiquetas(idGenero);
+            return libros;
+        }
+        
+        [HttpGet("[action]")]
+        public async Task<ActionResult<Object>> BuscarLibros(string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return Ok(new { results = new List<object>() });
+            }
 
-        //    var libros = await this.repo.BuscarLibrosAsync(query);
+            var libros = await this.repo.BuscarLibrosAsync(query);
 
-        //    var resultado = libros.Select(l => new
-        //    {
-        //        id = l.Id,
-        //        titulo = l.Titulo,
-        //        autor = l.NombreAutor != null ? l.NombreAutor : "Autor desconocido"
-        //    }).ToList();
+            var resultado = libros.Select(l => new
+            {
+                id = l.Id,
+                titulo = l.Titulo,
+                autor = l.NombreAutor != null ? l.NombreAutor : "Autor desconocido"
+            }).ToList();
 
-        //    return Json(new { results = resultado });
-        //}
+            return Ok(new { results = resultado });
+        }
 
-        //public async Task<IActionResult> Home()
-        //{
-        //    int? idUsuario = HttpContext.Session.GetInt32("id");
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<ActionResult<LibrosLeyendoProgreso>> Home()
+        {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
 
-        //    List<LibrosLeyendo> libro = await this.repo.LibrosLeyendo(idUsuario.Value);
-        //    List<ProgresoLectura> progresoLectura = new List<ProgresoLectura>();
+            List<LibrosLeyendo> libro = await this.repo.LibrosLeyendo(idUsuario);
+            List<ProgresoLectura> progresoLectura = new List<ProgresoLectura>();
 
-        //    foreach (var lib in libro)
-        //    {
-        //        var progresosLectura = await this.repo.GetProgresoLectura(idUsuario.Value, lib.Id);
-        //        progresoLectura.Add(progresosLectura);
-        //    }
+            foreach (var lib in libro)
+            {
+                var progresosLectura = await this.repo.GetProgresoLectura(idUsuario, lib.Id);
+                progresoLectura.Add(progresosLectura);
+            }
 
-        //    var libros = new LibrosLeyendoProgreso
-        //    {
-        //        Leyendos = libro,
-        //        ProgresoLectura = progresoLectura
-        //    };
+            var libros = new LibrosLeyendoProgreso
+            {
+                Leyendos = libro,
+                ProgresoLectura = progresoLectura
+            };
 
-        //    return View(libros);
-        //}
+            return libros;
+        }
 
         //[HttpPost]
         //public async Task<IActionResult> MoverLibrosEntreListas(int idlibro, int origen, int destino)
@@ -189,13 +199,7 @@ namespace ApiBookly.Controllers
 
 
 
-        //public async Task<IActionResult> Genero(int id)
-        //{
-        //    int? idUsuario = HttpContext.Session.GetInt32("id");
 
-        //    List<Libros> libros = await this.repo.FiltrarPorEtiquetas(id);
-        //    return View(libros);
-        //}
     }
 }
 
