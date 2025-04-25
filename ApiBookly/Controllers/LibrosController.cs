@@ -16,13 +16,14 @@ namespace ApiBookly.Controllers
             this.repo = repo;
         }
         [HttpGet("[action]")]
-        public async Task<ActionResult<Biblioteca>> GetIndex([FromQuery] int? idUsuario = null)
+        public async Task<ActionResult<Biblioteca>> GetIndex()
         {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
             var libros = await this.repo.GetLibrosAsync(idUsuario);
             var etiquetas = await this.repo.GetEtiquetas();
             var autores = await this.repo.GetAutoresAsync();
             List<LibroEtiquetas> librosetiquetas = new List<LibroEtiquetas>();
-            if (idUsuario.HasValue)
+            if (idUsuario != 0)
             {
                 librosetiquetas = await this.repo.GetEtiquetasLibroByUsuario(idUsuario);
             }
@@ -38,16 +39,17 @@ namespace ApiBookly.Controllers
         }
 
         [HttpGet("{idLibro}")]
-        public async Task<ActionResult<LibrosDetalles>> GetDetallesLibro(int idLibro, [FromQuery] int? idUsuario = null)
+        public async Task<ActionResult<LibrosDetalles>> GetDetallesLibro(int idLibro)
         {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
             Libros libro = await this.repo.FindLibros(idLibro);
             var etiquetas = await this.repo.ObtenerEtiquetasLibro(idLibro);
             List<Resenas> Reseñas = await this.repo.Reseñas(idLibro);
 
             int listaId = 0;
-            if (idUsuario.HasValue)
+            if (idUsuario != 0)
             {
-                listaId = await this.repo.LibrosListaDetalle(idLibro, idUsuario.Value);
+                listaId = await this.repo.LibrosListaDetalle(idLibro, idUsuario);
             }
             var detallesLibro = new LibrosDetalles
             {
@@ -61,8 +63,9 @@ namespace ApiBookly.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<GenerosDTO>> GetGeneros([FromQuery] int? idUsuario = null)
+        public async Task<ActionResult<GenerosDTO>> GetGeneros()
         {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
             var etiquetas = await this.repo.GetEtiquetas();
             List<LibrosDTO> libros = await this.repo.GetLibrosAsync(idUsuario);
             var generosConLibros = etiquetas.Select(e => new Generos
@@ -86,7 +89,7 @@ namespace ApiBookly.Controllers
         }
 
         [HttpGet("[action]/{idGenero}")]
-        public async Task<ActionResult<List<Libros>>> GetDetalleGenero(int idGenero, [FromQuery] int? idUsuario = null)
+        public async Task<ActionResult<List<Libros>>> GetDetalleGenero(int idGenero)
         {
             List<Libros> libros = await this.repo.FiltrarPorEtiquetas(idGenero);
             return libros;
@@ -136,70 +139,69 @@ namespace ApiBookly.Controllers
             return libros;
         }
 
-        //[HttpPost]
-        //public async Task<IActionResult> MoverLibrosEntreListas(int idlibro, int origen, int destino)
-        //{
-        //    int idusuario = (int)HttpContext.Session.GetInt32("id");
-        //    Console.WriteLine(idusuario.ToString(), idlibro, origen, destino);
-        //    await this.repo.MoverLibrosLista(idusuario, idlibro, origen, destino);
-        //    if (destino == 1)
-        //        await this.repo.InsertProgreso(idusuario, idlibro);
-        //    else if (destino != 1)
-        //    {
-        //        int id = (int)await this.repo.FindProgreso(idusuario, idlibro);
-        //        await this.repo.DeleteProgreso(id, idusuario);
-        //    }
-        //    return RedirectToAction("Home");
-        //}
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<ActionResult> MoverLibrosEntreListas(int idlibro, int origen, int destino)
+        {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+            await this.repo.MoverLibrosLista(idUsuario, idlibro, origen, destino);
+            if (destino == 1)
+                await this.repo.InsertProgreso(idUsuario, idlibro);
+            else if (destino != 1)
+            {
+                int id = (int)await this.repo.FindProgreso(idUsuario, idlibro);
+                await this.repo.DeleteProgreso(id, idUsuario);
+            }
+            return Ok(new { message = "Libro movido correctamente", destino = destino });
+        }
 
-        //[HttpPost]
-        //public async Task<IActionResult> ActualizarReseña(Resenas model)
-        //{
-        //    try
-        //    {
-        //        int idusuario = (int)HttpContext.Session.GetInt32("id");
-        //        int idreseña = model.Id;
-        //        var reseña = await this.repo.UpdateReseña(model.Id, idusuario, model.calificacion, model.texto);
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<ActionResult> ActualizarReseña(Resenas model)
+        {
+            try
+            {
+                int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+                int idreseña = model.Id;
+                var reseña = await this.repo.UpdateReseña(model.Id, idUsuario, model.calificacion, model.texto);
 
-        //        if (reseña == null)
-        //        {
-        //            return BadRequest(new { message = "No se encontró la reseña o no tienes permisos para editarla." });
-        //        }
+                if (reseña == null)
+                {
+                    return BadRequest(new { message = "No se encontró la reseña o no tienes permisos para editarla." });
+                }
 
-        //        return RedirectToAction("Detalles", new { id = model.idLibro });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log del error
-        //        return StatusCode(500, new { message = ex.Message });
-        //    }
+                return RedirectToAction("Detalles", new { id = model.idLibro });
+            }
+            catch (Exception ex)
+            {
+                // Log del error
+                return StatusCode(500, new { message = ex.Message });
+            }
 
-        //}
-
-
-        //[HttpPost]
-        //public async Task<IActionResult> InsertReseña(Resenas model)
-        //{
-        //    int idusuario = (int)HttpContext.Session.GetInt32("id");
-
-        //    await this.repo.InsertReseña(idusuario, model.idLibro, model.calificacion, model.texto);
-        //    return RedirectToAction("Detalles", new { id = model.idLibro });
-
-        //}
-
-        //[HttpPost]
-        //public async Task<IActionResult> UpdateProgreso(ProgresoLectura progreso)
-        //{
-        //    int idusuario = (int)HttpContext.Session.GetInt32("id");
-        //    int idprogreso = (int)await this.repo.FindProgreso(idusuario, progreso.idLibro);
-        //    await this.repo.UpdateProgreso(idprogreso, idusuario, progreso.Pagina);
-
-        //    return RedirectToAction("Home", new { id = progreso.idLibro });
-        //}
+        }
 
 
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<IActionResult> InsertReseña(Resenas model)
+        {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
 
+            await this.repo.InsertReseña(idUsuario, model.idLibro, model.calificacion, model.texto);
+            return RedirectToAction("Detalles", new { id = model.idLibro });
 
+        }
+
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProgreso(ProgresoLectura progreso)
+        {
+            int idUsuario = int.Parse(User.FindFirst("id")!.Value);
+            int idprogreso = (int)await this.repo.FindProgreso(idUsuario, progreso.idLibro);
+            await this.repo.UpdateProgreso(idprogreso, idUsuario, progreso.Pagina);
+
+            return RedirectToAction("Home", new { id = progreso.idLibro });
+        }
     }
 }
 
