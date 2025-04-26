@@ -45,7 +45,8 @@ namespace ApiBookly.Controllers
                 {
                     new Claim("id", usuario.Id.ToString()),
                     new Claim(ClaimTypes.Name, usuario.Nombre),
-                    new Claim("email", usuario.email)
+                    new Claim("email", usuario.email),
+                    new Claim("imagen", usuario.ImagenPerfil)
                 };
                 JwtSecurityToken token =
                     new JwtSecurityToken(
