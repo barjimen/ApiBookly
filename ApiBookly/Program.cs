@@ -4,8 +4,8 @@ using ApiBookly.Helper;
 using ApiBookly.Repositories;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
-using SegundoExamenAzure.Helper;
-using SegundoExamenAzure.Services;
+using ApiBookly.Helper;
+using ApiBookly.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

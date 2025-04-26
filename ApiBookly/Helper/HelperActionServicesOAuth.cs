@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-namespace SegundoExamenAzure.Helper
+namespace ApiBookly.Helper
 {
     public class HelperActionServicesOAuth
     {

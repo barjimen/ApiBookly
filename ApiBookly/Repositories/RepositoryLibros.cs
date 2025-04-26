@@ -253,7 +253,7 @@ namespace ApiBookly.Repositories
                 .FirstOrDefaultAsync()) ?? 0;
         }
 
-        public async Task<Resenas> UpdateReseña(int idReseña, int idUsuario, int nuevaCalificacion, string nuevoTexto)
+        public async Task<ReseñaDTO> UpdateReseña(int idReseña, int idUsuario, int nuevaCalificacion, string nuevoTexto)
         {
             var reseña = await this.context.Reseñas.Where(x => x.Id == idReseña && x.UsuarioId == idUsuario).FirstOrDefaultAsync();
             if (reseña == null)
@@ -265,18 +265,30 @@ namespace ApiBookly.Repositories
             reseña.fecha = DateTime.Now;
             this.context.Reseñas.Update(reseña);
             await this.context.SaveChangesAsync();
-            return reseña;
+            ReseñaDTO dto = new ReseñaDTO
+            {
+                Id = reseña.Id,
+                UsuarioId = reseña.UsuarioId,
+                IdLibro = reseña.idLibro,
+                Calificacion = reseña.calificacion,
+                Texto = reseña.texto,
+                Fecha = reseña.fecha
+            };
+
+            return dto;
         }
 
         public async Task InsertReseña(int usuario_id, int libro_id, int calificacion, string texto)
         {
-            string sql = "EXEC INSERT_RESENA @usuario_id, @libro_id, @calificacion, @texto";
-            SqlParameter pamIdUsuario = new SqlParameter("@usuario_id", usuario_id);
-            SqlParameter pamID = new SqlParameter("@libro_id", libro_id);
-            SqlParameter pamCali = new SqlParameter("@calificacion", calificacion);
-            SqlParameter pamTexto = new SqlParameter("@texto", texto);
+            //var sql = "EXEC INSERT_RESENA @usuario_id, @libro_id, @calificacion, @texto";
 
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdUsuario, pamID, pamCali, pamTexto);
+            await this.context.Database.ExecuteSqlRawAsync(
+                "EXEC INSERT_RESENA @usuario_id, @libro_id, @calificacion, @texto",
+                new SqlParameter("@usuario_id", usuario_id),
+                new SqlParameter("@libro_id", libro_id),
+                new SqlParameter("@calificacion", calificacion),
+                new SqlParameter("@texto", texto)
+            );
         }
 
         public async Task InsertObjetivo(int idUsuario, string titulo, DateTime fin, string tipo, int meta)
@@ -367,7 +379,7 @@ namespace ApiBookly.Repositories
                 return null;
             }
 
-            if(progreso.Pagina == libro.NumeroPaginas)
+            if (progreso.Pagina == libro.NumeroPaginas)
             {
                 await this.MoverLibrosLista(idUsuario, progreso.idLibro, 1, 2);
                 return progreso;
@@ -404,7 +416,7 @@ namespace ApiBookly.Repositories
             var usuarioExistente = await this.context.Usuarios.FindAsync(usuarios.Id);
 
             if (usuarioExistente != null)
-            { 
+            {
                 usuarioExistente.Nombre = usuarios.Nombre;
                 usuarioExistente.email = usuarios.email;
                 usuarioExistente.ImagenPerfil = usuarios.ImagenPerfil;
@@ -474,8 +486,14 @@ namespace ApiBookly.Repositories
             usuario.ImagenPerfil = fileName;
             await this.context.SaveChangesAsync();
 
-            return await GetFotoUsuario(idUsuario); 
+            return await GetFotoUsuario(idUsuario);
         }
 
+        public async Task<Etiquetas> FindEtiqueta(int idEtiqueta)
+        {
+            var etiqueta = await this.context.Etiquetas.FindAsync(idEtiqueta);
+            return etiqueta;
+        }
     }
+    
 }

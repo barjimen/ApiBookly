@@ -25,13 +25,14 @@ namespace ApiBookly.Repositories
         Task<List<ObjetivosUsuarios>> ObjetivosUsuarios(int idUsuario);
         Task<List<LibrosListasPredefinidas>> FindLibrosEnPredefinidos(int idUsuario, int idlista);
         Task<List<ReseñaDTO>> Reseñas(int idUsuario);
-        Task<Resenas> UpdateReseña(int idReseña, int idUsuario, int nuevaCalificacion, string nuevoTexto);
+        Task<ReseñaDTO> UpdateReseña(int idReseña, int idUsuario, int nuevaCalificacion, string nuevoTexto);
         Task InsertReseña(int idUsuario, int idLibro, int calificacion, string texto);
         Task<int> LibrosListaDetalle(int idLibro, int? idUsuario);
 
         Task InsertObjetivo(int idUsuario, string titulo, DateTime fin, string tipo, int meta);
         Task <ProgresoLectura> GetProgresoLectura(int idUsuario, int idLibro);
         Task<List<Etiquetas>> GetEtiquetas();
+        Task<Etiquetas> FindEtiqueta(int idEtiqueta);
         Task<ObjetivosUsuarios> UpdateObjetivo(int idObjetivo, int idUsuario, int progreso);
         Task DeleteObjetivo(int idObjetivo);
 

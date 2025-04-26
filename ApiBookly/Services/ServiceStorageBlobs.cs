@@ -3,7 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
 using BooklyNugget.Models;
 
-namespace SegundoExamenAzure.Services
+namespace ApiBookly.Services
 {
     public class ServiceStorageBlobs
     {

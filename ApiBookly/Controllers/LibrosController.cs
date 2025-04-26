@@ -3,6 +3,7 @@ using BooklyNugget.Models;
 using Microsoft.AspNetCore.Mvc;
 using ApiBookly.Helper;
 using Microsoft.AspNetCore.Authorization;
+using ApiBookly.Services;
 
 namespace ApiBookly.Controllers
 {
@@ -11,9 +12,11 @@ namespace ApiBookly.Controllers
     public class LibrosController : ControllerBase
     {
         private IRepositoryLibros repo;
-        public LibrosController(IRepositoryLibros repo)
+        private ServiceStorageBlobs service;
+        public LibrosController(IRepositoryLibros repo, ServiceStorageBlobs service)
         {
             this.repo = repo;
+            this.service = service;
         }
 
         [HttpGet("[action]")]
@@ -33,6 +36,12 @@ namespace ApiBookly.Controllers
             if (idUsuario != 0)
             {
                 librosetiquetas = await this.repo.GetEtiquetasLibroByUsuario(idUsuario);
+            }
+            foreach (LibrosDTO libro in libros)
+            {
+                string urlBlob = this.service.GetContainerUrl("imagesbookly");
+                libro.ImagenPortada = urlBlob + "/books/" + libro.ImagenPortada;
+
             }
             var datos = new Biblioteca
             {
@@ -58,6 +67,8 @@ namespace ApiBookly.Controllers
             Libros libro = await this.repo.FindLibros(idLibro);
             var etiquetas = await this.repo.ObtenerEtiquetasLibro(idLibro);
             List<ReseñaDTO> Reseñas = await this.repo.Reseñas(idLibro);
+            string urlBlob = this.service.GetContainerUrl("imagesbookly");
+            libro.ImagenPortada = urlBlob + "/books/" + libro.ImagenPortada;
 
             int listaId = 0;
             if (idUsuario != 0)
@@ -108,30 +119,60 @@ namespace ApiBookly.Controllers
         }
 
         [HttpGet("[action]/{idGenero}")]
-        public async Task<ActionResult<List<Libros>>> GetDetalleGenero(int idGenero)
+        public async Task<ActionResult<Generos>> GetDetalleGenero(int idGenero)
         {
+            Etiquetas genero = await this.repo.FindEtiqueta(idGenero);
+            if (genero == null)
+            {
+                return NotFound();
+            }
+
+            // Sacamos los libros
             List<Libros> libros = await this.repo.FiltrarPorEtiquetas(idGenero);
-            return libros;
+            string urlBlob = this.service.GetContainerUrl("imagesbookly");
+
+            // Creamos la lista de DTOs
+            List<LibrosDTO> librosDto = new List<LibrosDTO>();
+            foreach (Libros libro in libros)
+            {
+                librosDto.Add(new LibrosDTO
+                {
+                    Id = libro.Id,
+                    Titulo = libro.Titulo,
+                    ImagenPortada = urlBlob + "/books/" + libro.ImagenPortada
+                });
+            }
+
+            Generos model = new Generos
+            {
+                Genero = genero,
+                Libros = librosDto
+            };
+
+            return model;
         }
         
         [HttpGet("[action]")]
-        public async Task<ActionResult<Object>> BuscarLibros(string query)
+        public async Task<ActionResult<List<LibrosBusquedaDTO>>> BuscarLibros(string query)
         {
             if (string.IsNullOrEmpty(query))
             {
-                return Ok(new { results = new List<object>() });
+                return new List<LibrosBusquedaDTO>();
             }
 
             var libros = await this.repo.BuscarLibrosAsync(query);
 
-            var resultado = libros.Select(l => new
+            string urlBlob = this.service.GetContainerUrl("imagesbookly");
+
+            var resultado = libros.Select(l => new LibrosBusquedaDTO
             {
-                id = l.Id,
-                titulo = l.Titulo,
-                autor = l.NombreAutor != null ? l.NombreAutor : "Autor desconocido"
+                Id = l.Id,
+                Titulo = l.Titulo,
+                Autor = !string.IsNullOrEmpty(l.NombreAutor) ? l.NombreAutor : "Autor desconocido",
+                Imagen = urlBlob + "/books/" + l.ImagenPortada
             }).ToList();
 
-            return Ok(new { results = resultado });
+            return resultado;
         }
 
         [Authorize]
@@ -142,10 +183,13 @@ namespace ApiBookly.Controllers
 
             List<LibrosLeyendo> libro = await this.repo.LibrosLeyendo(idUsuario);
             List<ProgresoLectura> progresoLectura = new List<ProgresoLectura>();
+            string urlBlob = this.service.GetContainerUrl("imagesbookly");
+
 
             foreach (var lib in libro)
             {
                 var progresosLectura = await this.repo.GetProgresoLectura(idUsuario, lib.Id);
+                lib.ImagenPortada = urlBlob + "/books/" + lib.ImagenPortada;
                 progresoLectura.Add(progresosLectura);
             }
 
@@ -158,7 +202,7 @@ namespace ApiBookly.Controllers
             return libros;
         }
 
-        [HttpPost("[action]")]
+        [HttpPost("[action]/{idlibro}/{origen}/{destino}")]
         [Authorize]
         public async Task<ActionResult> MoverLibrosEntreListas(int idlibro, int origen, int destino)
         {
@@ -174,22 +218,22 @@ namespace ApiBookly.Controllers
             return Ok(new { message = "Libro movido correctamente", destino = destino });
         }
 
-        [HttpPost("[action]")]
+        [HttpPut("[action]")]
         [Authorize]
-        public async Task<ActionResult> ActualizarReseña(Resenas model)
+        public async Task<ActionResult> ActualizarReseña(ReseñaDTO res)
         {
             try
             {
                 int idUsuario = int.Parse(User.FindFirst("id")!.Value);
-                int idreseña = model.Id;
-                var reseña = await this.repo.UpdateReseña(model.Id, idUsuario, model.calificacion, model.texto);
+                int idreseña = res.Id;
+                var reseña = await this.repo.UpdateReseña(res.Id, idUsuario, res.Calificacion, res.Texto);
 
                 if (reseña == null)
                 {
                     return BadRequest(new { message = "No se encontró la reseña o no tienes permisos para editarla." });
                 }
 
-                return RedirectToAction("Detalles", new { id = model.idLibro });
+                return Ok(new { message = "Reseña actualizada correctamente", id = res.IdLibro });
             }
             catch (Exception ex)
             {
@@ -202,16 +246,16 @@ namespace ApiBookly.Controllers
 
         [HttpPost("[action]")]
         [Authorize]
-        public async Task<IActionResult> InsertReseña(Resenas model)
+        public async Task<IActionResult> InsertReseña(ReseñaDTO model)
         {
             int idUsuario = int.Parse(User.FindFirst("id")!.Value);
 
-            await this.repo.InsertReseña(idUsuario, model.idLibro, model.calificacion, model.texto);
-            return RedirectToAction("Detalles", new { id = model.idLibro });
+            await this.repo.InsertReseña(idUsuario, model.IdLibro, model.Calificacion, model.Texto);
+            return Ok(new { message = "Reseña insertada correctamente", idLibro = model.IdLibro });
 
         }
 
-        [HttpPost("[action]")]
+        [HttpPut("[action]")]
         [Authorize]
         public async Task<IActionResult> UpdateProgreso(ProgresoLectura progreso)
         {
@@ -219,7 +263,7 @@ namespace ApiBookly.Controllers
             int idprogreso = (int)await this.repo.FindProgreso(idUsuario, progreso.idLibro);
             await this.repo.UpdateProgreso(idprogreso, idUsuario, progreso.Pagina);
 
-            return RedirectToAction("Home", new { id = progreso.idLibro });
+            return Ok(new { message = "Update correcto", id = progreso.idLibro });
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using SegundoExamenAzure.Helper;
+using ApiBookly.Helper;
 using ApiBookly.Repositories;
 using BooklyNugget.Models;
 
