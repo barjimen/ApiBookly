@@ -1,5 +1,6 @@
 ﻿using ApiBookly.Helper;
 using ApiBookly.Repositories;
+using ApiBookly.Services;
 using BooklyNugget.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,24 +14,18 @@ namespace ApiBookly.Controllers
     {
         private readonly IWebHostEnvironment _hostingEnvironment;
         private IRepositoryLibros repo;
-        public UsuariosController(IRepositoryLibros repo, IWebHostEnvironment hostingEnvironment)
+        private ServiceStorageBlobs service;
+        public UsuariosController(IRepositoryLibros repo, IWebHostEnvironment hostingEnvironment, ServiceStorageBlobs service)
         {
             _hostingEnvironment = hostingEnvironment;
             this.repo = repo;
+            this.service = service;
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult> Register(string nombre, string email, string password)
+        public async Task<ActionResult> Register(Register user)
         {
-            await this.repo.Register(nombre, email, password);
+            await this.repo.Register(user);
             return Ok(new { message = "Usuario registrado correctamente" });
-        }
-
-        [HttpPost("[action]")]
-        [Authorize]
-        public IActionResult Logout()
-        {
-            // No hay nada que hacer en el servidor con JWT
-            return Ok(new { message = "Logout exitoso. Borra el token en el cliente." });
         }
 
         [HttpGet("[action]")]
@@ -52,13 +47,15 @@ namespace ApiBookly.Controllers
             var CountLibros = await this.repo.ObtenerCountListas(idUser);
             var librosPredefinidos = await this.repo.LibrosEnPredefinidos(idUser);
             var objetivos = await this.repo.ObjetivosUsuarios(idUser);
+            string urlBlob = this.service.GetContainerUrl("imagesbookly");
+
             ProgresoLectura progreso = null;
             if (librosPredefinidos.Count > 0)
             {
                 int idLibro = librosPredefinidos.First().IdLibro;
                 progreso = await this.repo.GetProgresoLectura(idUser, idLibro);
             }
-
+            usuario.ImagenPerfil = urlBlob + "/Users/" + usuario.ImagenPerfil;
             var homeUsuario = new HomeUsuario
             {
                 Usuarios = usuario,
@@ -87,22 +84,6 @@ namespace ApiBookly.Controllers
 
             return MisLibros;
         }
-
-        //[HttpGet("[action]")]
-        //[Authorize]
-        //public async Task<ActionResult> FiltrarMisLibros(int idUsuario, int idLista)
-        //{
-        //    if (idLista == 0)
-        //    {
-        //        var libros = await this.repo.LibrosEnPredefinidos(idUsuario);
-        //        return PartialView("_LibrosPartial", libros);
-        //    }
-        //    else
-        //    {
-        //        var libros = await this.repo.FindLibrosEnPredefinidos(idUsuario, idLista);
-        //        return PartialView("_LibrosPartial", libros);
-        //    }
-        //}
 
         [HttpGet("[action]")]
         [Authorize]

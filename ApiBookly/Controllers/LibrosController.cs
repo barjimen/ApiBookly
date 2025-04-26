@@ -202,7 +202,7 @@ namespace ApiBookly.Controllers
             return libros;
         }
 
-        [HttpPost("[action]/{idlibro}/{origen}/{destino}")]
+        [HttpPost("[action]")]
         [Authorize]
         public async Task<ActionResult> MoverLibrosEntreListas(int idlibro, int origen, int destino)
         {

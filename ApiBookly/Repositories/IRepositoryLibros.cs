@@ -18,7 +18,7 @@ namespace ApiBookly.Repositories
         Task<List<Autores>> GetAutoresAsync();
         Task<DetallesAutor> FindAutorAsync(int idAutor);
         Task<Usuarios> Login(string email, string password);
-        Task Register(string nombre, string email, string password);
+        Task Register(Register user);
         Task<Usuarios> GetUsuario(int id);
         Task<List<CountLibrosListasPredefinidas>> ObtenerCountListas(int idUsuario);
         Task<List<LibrosListasPredefinidas>> LibrosEnPredefinidos(int idUsuario);

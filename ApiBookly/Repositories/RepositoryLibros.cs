@@ -144,16 +144,16 @@ namespace ApiBookly.Repositories
             }
         }
 
-        public async Task Register(string nombre, string email, string password)
+        public async Task Register(Register user)
         {
             Usuarios usuario = new Usuarios();
             int nuevoId = (context.Usuarios.Max(u => (int?)u.Id) ?? 0) + 1;
             usuario.Id = nuevoId;
-            usuario.Nombre = nombre;
-            usuario.email = email;
-            usuario.Password = password;
+            usuario.Nombre = user.Nombre;
+            usuario.email = user.Email;
+            usuario.Password = user.Password;
             usuario.Salt = HelperCryptography.GenerateSalt();
-            usuario.Password_hash = HelperCryptography.EncryptPassword(password, usuario.Salt);
+            usuario.Password_hash = HelperCryptography.EncryptPassword(user.Password, usuario.Salt);
             usuario.ImagenPerfil = "default.jpg";
             usuario.FechaRegistro = DateTime.Now;
             usuario.TipoUsuario = "lector";
