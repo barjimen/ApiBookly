@@ -293,14 +293,14 @@ namespace ApiBookly.Repositories
 
         public async Task InsertObjetivo(int idUsuario, string titulo, DateTime fin, string tipo, int meta)
         {
-            string sql = "EXEC INSERT_OBJETIVO @usuario_id, @titulo, @fecha_fin, @tipo,@meta";
-            SqlParameter pamUsuario = new SqlParameter("@usuario_id", idUsuario);
-            SqlParameter pamTitulo = new SqlParameter("@titulo", titulo);
-            SqlParameter pamFin = new SqlParameter("@fecha_fin", fin);
-            SqlParameter pamTipo = new SqlParameter("@tipo", tipo);
-            SqlParameter pamMeta = new SqlParameter("@meta", meta);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamUsuario, pamTitulo, pamTipo, pamFin, pamMeta);
+            await this.context.Database.ExecuteSqlRawAsync(
+                "EXEC INSERT_OBJETIVO @usuario_id, @titulo, @fecha_fin, @tipo, @meta",
+                new SqlParameter("@usuario_id", idUsuario),
+                new SqlParameter("@titulo", titulo),
+                new SqlParameter("@fecha_fin", fin),
+                new SqlParameter("@tipo", tipo),
+                new SqlParameter("@meta", meta)
+            );
 
         }
 

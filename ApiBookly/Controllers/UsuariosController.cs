@@ -118,28 +118,27 @@ namespace ApiBookly.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateProgreso(ObjetivosUsuarios objetivos)
         {
-            int idusuario = (int)HttpContext.Session.GetInt32("id");
-
-            await this.repo.UpdateObjetivo(objetivos.idObjetivo, idusuario, objetivos.ProgresoActual);
+            int idUser = int.Parse(User.FindFirst("id")!.Value);
+            await this.repo.UpdateObjetivo(objetivos.idObjetivo, idUser, objetivos.ProgresoActual);
             return Ok();
         }
 
-        //[HttpPut("[action]")]
-        //[Authorize]
-        //public async Task<ActionResult<Usuarios>> UpdateUsuario()
-        //{
-        //    int idUser = int.Parse(User.FindFirst("id")!.Value);
-        //    var usuario = await this.repo.GetUsuario(idUser);
-        //    return usuario;
-        //}
-
         [HttpPut("[action]")]
         [Authorize]
-        public async Task<ActionResult<Usuarios>> UpdateUsuario(Usuarios usuario, IFormFile ProfileImageFile)
+        public async Task<ActionResult<Usuarios>> UpdateUsuario(Usuarios usuario)
         {
             await this.repo.UpdateUsuarios(usuario);
+            return Ok();
+        }
+
+        [HttpGet("[action]")]
+        [Authorize]
+        public async Task<ActionResult<Usuarios>> GetUsuario(int idUsuario)
+        {
+            var usuario = await this.repo.GetUsuario(idUsuario);
             return usuario;
         }
+        
 
 
         //[HttpPost]
