@@ -46,6 +46,6 @@ namespace ApiBookly.Repositories
         Task UpdateLibro(Libros libro);
 
         Task<string> GetFotoUsuario(int idUsuario);
-        Task<string> UpdateFotoUsuario(int idUsuario, string foto);
+        Task<bool> UpdateFotoUsuario(int idUsuario, string fileName);
     }
 }

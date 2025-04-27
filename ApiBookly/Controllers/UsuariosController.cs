@@ -1,6 +1,8 @@
-﻿using ApiBookly.Helper;
+﻿using System.Security.Claims;
+using ApiBookly.Helper;
 using ApiBookly.Repositories;
 using ApiBookly.Services;
+using Azure.Storage.Blobs;
 using BooklyNugget.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -138,59 +140,6 @@ namespace ApiBookly.Controllers
             var usuario = await this.repo.GetUsuario(idUsuario);
             return usuario;
         }
-        
-
-
-        //[HttpPost]
-        //[Route("[action]")]
-        //[Authorize]
-        //public async Task<IActionResult> SubirFichero(IFormFile fichero)
-        //{
-        //    int idusuario = (int)HttpContext.Session.GetInt32("id");
-
-        //    if (fichero == null || fichero.Length == 0)
-        //    {
-        //        return BadRequest("No se envió un archivo.");
-        //    }
-
-        //    string[] permittedExtensions = { ".jpg", ".jpeg", ".png", ".gif" };
-        //    string extension = Path.GetExtension(fichero.FileName).ToLowerInvariant();
-
-        //    if (!permittedExtensions.Contains(extension))
-        //    {
-        //        return BadRequest("Extensión de archivo no permitida.");
-        //    }
-
-        //    if (fichero.Length > 2 * 1024 * 1024) // 2 MB
-        //    {
-        //        return BadRequest("El archivo excede el tamaño máximo permitido.");
-        //    }
-
-        //    // Generar un nombre único para el archivo
-        //    string fileName = $"usuario_{idusuario}{extension}";
-
-        //    // Ruta física donde guardar el archivo
-        //    string path = this.helperImages.MapPath(fileName, Folders.Users);
-
-        //    // Asegurarse de que la carpeta existe
-        //    string directory = Path.GetDirectoryName(path);
-        //    if (!Directory.Exists(directory))
-        //    {
-        //        Directory.CreateDirectory(directory);
-        //    }
-
-        //    // Guardar el archivo
-        //    using (var stream = new FileStream(path, FileMode.Create))
-        //    {
-        //        await fichero.CopyToAsync(stream);
-        //    }
-
-        //    // Guardar solo el nombre del archivo en la base de datos
-        //    await this.repo.UpdateFotoUsuario(idusuario, fileName);
-        //    var perfil = await this.repo.GetUsuario(idusuario);
-
-        //    return RedirectToAction("Perfil", perfil);
-        //}
 
     }
 }

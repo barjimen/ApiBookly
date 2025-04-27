@@ -3,16 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using BooklyNugget.Models;
 using ApiBookly.Helper;
+using Azure.Storage.Blobs;
+using ApiBookly.Services;
 
 namespace ApiBookly.Repositories
 {
     public class RepositoryLibros : IRepositoryLibros
     {
         private StoryContext context;
+        private ServiceStorageBlobs service;
 
-        public RepositoryLibros(StoryContext context)
+        public RepositoryLibros(StoryContext context, ServiceStorageBlobs service)
         {
             this.context = context;
+            this.service = service;
         }
         public Task AddAsync(Libros libros)
         {
@@ -452,42 +456,24 @@ namespace ApiBookly.Repositories
             return foto;
         }
 
-        public async Task<string> UpdateFotoUsuario(int idUsuario, string foto)
+        public async Task<bool> UpdateFotoUsuario(int idUsuario, string fileName)
         {
-            var usuario = await this.context.Usuarios.FindAsync(idUsuario);
-
-            if (usuario == null)
+            try
             {
-                throw new Exception("Usuario no encontrado.");
+                var usuario = await this.GetUsuario(idUsuario);
+                if (usuario == null) return false;
+
+                usuario.ImagenPerfil = fileName;
+                await this.context.SaveChangesAsync();
+                return true;
             }
-
-            // Extraer nombre de archivo (podrías usar el id + timestamp, por ejemplo)
-            string fileName = $"usuario_{idUsuario}.jpg";
-            string wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-
-            if (!Directory.Exists(wwwrootPath))
+            catch (Exception ex)
             {
-                Directory.CreateDirectory(wwwrootPath);
+                Console.WriteLine($"Error al actualizar foto de perfil: {ex.Message}");
+                return false;
             }
-
-            string filePath = Path.Combine(wwwrootPath, fileName);
-
-            // Si no existe la imagen, la guardamos
-            if (!System.IO.File.Exists(filePath))
-            {
-                // Eliminar encabezado "data:image/jpeg;base64," si lo trae
-                if (foto.Contains(','))
-                {
-                    foto = foto.Split(',')[1];
-                }
-            }
-
-            // Guardamos el nombre en la base de datos
-            usuario.ImagenPerfil = fileName;
-            await this.context.SaveChangesAsync();
-
-            return await GetFotoUsuario(idUsuario);
         }
+
 
         public async Task<Etiquetas> FindEtiqueta(int idEtiqueta)
         {

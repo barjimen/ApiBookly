@@ -6,16 +6,27 @@ using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using ApiBookly.Helper;
 using ApiBookly.Services;
+using Microsoft.Extensions.Azure;
+using Azure.Security.KeyVault.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Para los blobs
-var azureKeys = builder.Configuration.GetValue<string>("AzureKeys:StorageAccount");
+builder.Services.AddAzureClients(factory =>
+{
+    factory.AddSecretClient
+    (builder.Configuration.GetSection("KeyVault"));
+});
+
+SecretClient secretClient = builder.Services.BuildServiceProvider().GetService<SecretClient>();
+KeyVaultSecret secretBlob = await secretClient.GetSecretAsync("StorageAccount");
+var azureKeys = secretBlob.Value;
 BlobServiceClient blob = new BlobServiceClient(azureKeys);
 builder.Services.AddTransient<BlobServiceClient>(x => blob);
 
 builder.Services.AddOpenApi();
-string connectionString = builder.Configuration.GetConnectionString("Bookly");
+KeyVaultSecret booklySecret = await secretClient.GetSecretAsync("Bookly");
+string connectionString = booklySecret.Value;
 
 //Auth usuarios
 HelperActionServicesOAuth helper =

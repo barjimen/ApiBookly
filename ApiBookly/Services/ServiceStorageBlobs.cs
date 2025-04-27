@@ -7,7 +7,7 @@ namespace ApiBookly.Services
 {
     public class ServiceStorageBlobs
     {
-        private BlobServiceClient client;
+        public BlobServiceClient client;
 
         public ServiceStorageBlobs(BlobServiceClient client)
         {
@@ -88,6 +88,21 @@ namespace ApiBookly.Services
            this.client.GetBlobContainerClient(containerName);
             await containerClient.UploadBlobAsync
                 (blobNane, stream);
+        }
+        public async Task UpdateBlobAsync(string containerName, string oldBlobName, string newBlobName, Stream stream)
+        {
+            BlobContainerClient containerClient = this.client.GetBlobContainerClient(containerName);
+
+            await containerClient.UploadBlobAsync(newBlobName, stream);
+
+            if (!string.IsNullOrEmpty(oldBlobName) && oldBlobName != newBlobName)
+            {
+                BlobClient oldBlobClient = containerClient.GetBlobClient(oldBlobName);
+                if (await oldBlobClient.ExistsAsync())
+                {
+                    await oldBlobClient.DeleteAsync();
+                }
+            }
         }
 
     }
